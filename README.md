@@ -1,8 +1,11 @@
 # pointcloud-viewer
 
-Visualisateur de nuages de points `.las` / `.laz` 100 % frontend (React + three.js à venir).
+Visualisateur de nuages de points `.las` / `.laz` 100 % frontend (React + MapLibre + three.js).
 Le « bake » LAS/LAZ → `.bin` (format PCBK, voir [docs/adr/0001](docs/adr/0001-pcbk-custom-binary-format.md))
 est écrit en Rust (`webassembly/`), compilé en WebAssembly et exécuté dans un Web Worker.
+Le nuage baké s'affiche géoréférencé sur une carte MapLibre (orthophotos IGN) via un custom
+layer three.js partageant le contexte WebGL (voir [docs/adr/0002](docs/adr/0002-georeferencement-par-ancre.md)) ;
+les `.bin` déjà bakés se rouvrent directement.
 
 Vocabulaire du domaine : voir [CONTEXT.md](CONTEXT.md).
 
@@ -28,7 +31,8 @@ npm run dev
 cd webassembly && cargo test
 ```
 
-Pour générer des fichiers d'essai (spirale colorée de 100 k points) :
+Pour générer des fichiers d'essai (spirale colorée de 100 k points, en Lambert-93 au centre
+de Paris, plus une variante `sample-nocrs.las` sans CRS pour tester la saisie d'EPSG) :
 
 ```bash
 cd webassembly && cargo run --release --example generate-sample .
@@ -36,7 +40,9 @@ cd webassembly && cargo run --release --example generate-sample .
 
 ## Structure
 
-- `webassembly/` — crate Rust `pointcloud-baker` : bake LAS/LAZ → PCBK (`bake_to_pcbk`, export wasm `bake`)
+- `webassembly/` — crate Rust `pointcloud-baker` : bake LAS/LAZ → PCBK (`bake_to_pcbk`, export wasm `bake`), extraction de l'EPSG des VLRs (`src/crs.rs`)
 - `src/lib/baked-pointcloud.ts` — parseur PCBK (vues TypedArray zero-copy)
+- `src/lib/epsg-registry.ts` / `src/lib/map-anchor.ts` — reprojection proj4 du World Offset vers l'ancre carte
+- `src/lib/pointcloud-layer.ts` / `src/lib/pointcloud-shaders.ts` — custom layer MapLibre rendu en three.js (modes RGB / intensité / classification / altitude)
 - `src/workers/bake-worker.ts` — exécute le wasm hors du main thread, remonte la progression
-- `src/hooks/use-bake.ts` / `src/components/bake-panel.tsx` — UI : input fichier, progression, stats
+- `src/hooks/use-bake.ts` / `src/components/` — UI : input fichier (.las/.laz/.bin), progression, stats, carte plein écran, réglages, saisie d'EPSG

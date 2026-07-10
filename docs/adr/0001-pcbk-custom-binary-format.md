@@ -2,7 +2,7 @@
 
 ## Statut
 
-Accepté (2026-07-10)
+Accepté (2026-07-10) — header étendu à 72 octets (champ EPSG) par [0002](0002-georeferencement-par-ancre.md)
 
 ## Contexte
 

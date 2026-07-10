@@ -1,16 +1,17 @@
 /**
  * Parser for the PCBK format produced by the Rust baker (webassembly/).
  *
- * Layout (little-endian): 64-byte header (magic "PCBK", version u32, count
- * u32, flags u32, world offset f64x3, local bbox f32x6) followed by planar
- * blocks: positions f32x3, intensity u16, rgb u8x3, classification u8.
+ * Layout (little-endian): 72-byte header (magic "PCBK", version u32, count
+ * u32, flags u32, world offset f64x3, local bbox f32x6, epsg u32 with
+ * 0 = unknown, reserved u32) followed by planar blocks: positions f32x3,
+ * intensity u16, rgb u8x3, classification u8.
  * The typed arrays returned are zero-copy views over the input buffer.
  */
 
-const HEADER_SIZE = 64
+const HEADER_SIZE = 72
 // "PCBK" read as a little-endian u32
 const MAGIC = 0x4b424350
-const PCBK_VERSION = 1
+const PCBK_VERSION = 2
 
 const FLAG_RGB = 1
 const FLAG_INTENSITY = 1 << 1
@@ -29,6 +30,8 @@ export interface BakedPointCloud {
   /** Bounding box of the recentered (local) positions. */
   bboxMin: Vec3
   bboxMax: Vec3
+  /** EPSG code of the source CRS, 0 when the LAS carried none. */
+  epsg: number
   positions: Float32Array
   intensity: Uint16Array | null
   rgb: Uint8Array | null
@@ -45,7 +48,7 @@ export function parseBakedPointCloud(buffer: ArrayBuffer): BakedPointCloud {
   }
   const version = view.getUint32(4, true)
   if (version !== PCBK_VERSION) {
-    throw new Error(`unsupported PCBK version ${version}`)
+    throw new Error(`unsupported PCBK version ${version} — re-bake the source LAS/LAZ`)
   }
   const count = view.getUint32(8, true)
   const flags = view.getUint32(12, true)
@@ -57,6 +60,7 @@ export function parseBakedPointCloud(buffer: ArrayBuffer): BakedPointCloud {
   const worldOffset = vec3(16, (at) => view.getFloat64(at, true), 8)
   const bboxMin = vec3(40, (at) => view.getFloat32(at, true), 4)
   const bboxMax = vec3(52, (at) => view.getFloat32(at, true), 4)
+  const epsg = view.getUint32(64, true)
 
   const intensitySize = flags & FLAG_INTENSITY ? count * 2 : 0
   const rgbSize = flags & FLAG_RGB ? count * 3 : 0
@@ -83,5 +87,5 @@ export function parseBakedPointCloud(buffer: ArrayBuffer): BakedPointCloud {
     classification = new Uint8Array(buffer, at, count)
   }
 
-  return { count, worldOffset, bboxMin, bboxMax, positions, intensity, rgb, classification }
+  return { count, worldOffset, bboxMin, bboxMax, epsg, positions, intensity, rgb, classification }
 }

@@ -2,6 +2,8 @@ use std::io::Cursor;
 
 use las::Reader;
 
+mod crs;
+
 /// Progress callback granularity, in points.
 const PROGRESS_CHUNK: u64 = 500_000;
 
@@ -36,12 +38,13 @@ impl From<las::Error> for BakeError {
 
 /// Bakes a LAS/LAZ file into the PCBK binary format.
 ///
-/// PCBK layout (little-endian): 64-byte header (magic "PCBK", version u32,
-/// count u32, flags u32, world offset f64x3, local bbox f32x6) followed by
-/// planar blocks: positions f32x3, intensity u16, rgb u8x3, classification u8.
-/// Intensity comes before rgb so every block offset stays aligned for
-/// zero-copy TypedArray views. Positions are recentered on the per-axis
-/// minimum (the world offset) so they stay precise as f32.
+/// PCBK layout (little-endian): 72-byte header (magic "PCBK", version u32,
+/// count u32, flags u32, world offset f64x3, local bbox f32x6, epsg u32 with
+/// 0 = unknown, reserved u32) followed by planar blocks: positions f32x3,
+/// intensity u16, rgb u8x3, classification u8. Intensity comes before rgb so
+/// every block offset stays aligned for zero-copy TypedArray views. Positions
+/// are recentered on the per-axis minimum (the world offset) so they stay
+/// precise as f32.
 pub fn bake_to_pcbk(
     las_bytes: Vec<u8>,
     mut on_progress: impl FnMut(u64, u64),
@@ -51,6 +54,7 @@ pub fn bake_to_pcbk(
     let count = u32::try_from(total).map_err(|_| BakeError::TooManyPoints(total))?;
     let has_color = reader.header().point_format().has_color;
     let offset = reader.header().bounds().min;
+    let epsg = crs::extract_epsg(reader.header());
 
     let mut positions: Vec<f32> = Vec::with_capacity(count as usize * 3);
     let mut rgb16: Vec<u16> = Vec::with_capacity(if has_color { count as usize * 3 } else { 0 });
@@ -93,10 +97,10 @@ pub fn bake_to_pcbk(
     on_progress(done, total);
 
     let flags = if has_color { FLAG_RGB } else { 0 } | FLAG_INTENSITY | FLAG_CLASSIFICATION;
-    let size = 64 + positions.len() * 4 + rgb16.len() + intensities.len() * 2 + classifications.len();
+    let size = 72 + positions.len() * 4 + rgb16.len() + intensities.len() * 2 + classifications.len();
     let mut bin: Vec<u8> = Vec::with_capacity(size);
     bin.extend_from_slice(b"PCBK");
-    bin.extend_from_slice(&1u32.to_le_bytes());
+    bin.extend_from_slice(&2u32.to_le_bytes());
     bin.extend_from_slice(&count.to_le_bytes());
     bin.extend_from_slice(&flags.to_le_bytes());
     for value in [offset.x, offset.y, offset.z] {
@@ -105,6 +109,9 @@ pub fn bake_to_pcbk(
     for value in bbox_min.iter().chain(bbox_max.iter()) {
         bin.extend_from_slice(&value.to_le_bytes());
     }
+    bin.extend_from_slice(&epsg.to_le_bytes());
+    // Reserved padding: keeps the header a multiple of 8 for future f64 fields.
+    bin.extend_from_slice(&0u32.to_le_bytes());
     for value in &positions {
         bin.extend_from_slice(&value.to_le_bytes());
     }

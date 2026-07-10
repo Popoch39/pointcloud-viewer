@@ -59,3 +59,116 @@
 .bake-error p {
   color: #dc2626;
 }
+
+/* Doubled class beats maplibre-gl.css's `.maplibregl-map { position: relative }`,
+   which lands after app.css in the bundle order. */
+.map-view.map-view {
+  position: fixed;
+  inset: 0;
+}
+
+.map-overlays {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  right: 60px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.map-overlays > * {
+  pointer-events: auto;
+}
+
+.bake-panel-overlay {
+  padding: 8px 16px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  max-width: 420px;
+  max-height: calc(100vh - 24px);
+  overflow-y: auto;
+  display: block;
+}
+
+.bake-panel-overlay summary {
+  cursor: pointer;
+  font-family: var(--mono);
+  color: var(--text-h);
+}
+
+.bake-panel-overlay .bake-stats {
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+.bake-panel-overlay .file-picker {
+  display: block;
+  margin-top: 12px;
+}
+
+.viewer-settings {
+  display: flex;
+  gap: 16px;
+  padding: 8px 16px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.viewer-settings label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text-h);
+  white-space: nowrap;
+}
+
+.viewer-settings select {
+  font: inherit;
+}
+
+.epsg-prompt {
+  width: 100%;
+  max-width: 560px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+}
+
+.epsg-prompt h2 {
+  margin: 0;
+}
+
+.epsg-prompt label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-h);
+}
+
+.epsg-prompt input {
+  font: inherit;
+  font-family: var(--mono);
+  width: 8ch;
+}
+
+.epsg-prompt button {
+  align-self: flex-start;
+  font: inherit;
+}
+
+.epsg-prompt-error {
+  color: #dc2626;
+  margin: 0;
+}

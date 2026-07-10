@@ -5,21 +5,46 @@ import type { BakeWorkerMessage } from '../workers/bake-worker.ts'
 export type BakeState =
   | { status: 'idle' }
   | { status: 'baking'; fileName: string; done: number; total: number }
+  | { status: 'loading'; fileName: string }
   | {
       status: 'done'
       fileName: string
       cloud: BakedPointCloud
       binByteLength: number
-      durationMs: number
+      /** null when the file was an already-baked .bin. */
+      durationMs: number | null
     }
   | { status: 'error'; fileName: string; message: string }
 
-/** Runs the WASM baker in a Web Worker and tracks its progress. */
+/**
+ * Turns a picked file into a parsed cloud: .las/.laz go through the WASM
+ * baker in a Web Worker, already-baked .bin/.pcbk are parsed in place
+ * (zero-copy, no worker needed).
+ */
 export function useBake() {
   const workerRef = useRef<Worker | null>(null)
   const [state, setState] = useState<BakeState>({ status: 'idle' })
 
   useEffect(() => () => workerRef.current?.terminate(), [])
+
+  const openBin = useCallback(async (file: File) => {
+    workerRef.current?.terminate()
+    workerRef.current = null
+    setState({ status: 'loading', fileName: file.name })
+    try {
+      const buffer = await file.arrayBuffer()
+      setState({
+        status: 'done',
+        fileName: file.name,
+        cloud: parseBakedPointCloud(buffer),
+        binByteLength: buffer.byteLength,
+        durationMs: null,
+      })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      setState({ status: 'error', fileName: file.name, message })
+    }
+  }, [])
 
   const bakeFile = useCallback((file: File) => {
     workerRef.current?.terminate()
@@ -50,5 +75,16 @@ export function useBake() {
     worker.postMessage({ file })
   }, [])
 
-  return { state, bakeFile }
+  const openFile = useCallback(
+    (file: File) => {
+      if (/\.(bin|pcbk)$/i.test(file.name)) {
+        void openBin(file)
+      } else {
+        bakeFile(file)
+      }
+    },
+    [openBin, bakeFile],
+  )
+
+  return { state, openFile }
 }

@@ -17,6 +17,7 @@ webassembly/target
 webassembly/pkg
 sample.las
 sample.laz
+sample-nocrs.las
 
 # Editor directories and files
 .vscode/*

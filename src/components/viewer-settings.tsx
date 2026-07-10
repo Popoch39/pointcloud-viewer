@@ -1,3 +1,12 @@
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Slider } from '@/components/ui/slider'
 import type { BakedPointCloud } from '../lib/baked-pointcloud.ts'
 import { availableModes, type ColorMode } from '../lib/pointcloud-shaders.ts'
 
@@ -28,31 +37,42 @@ export function ViewerSettings({
 }: ViewerSettingsProps) {
   const available = availableModes(cloud)
   return (
-    <section className="viewer-settings">
-      <label>
-        Couleur
-        <select
+    <section className="flex items-center gap-4 rounded-lg border bg-background px-4 py-2 shadow-md">
+      <div className="flex items-center gap-2">
+        <Label className="whitespace-nowrap text-muted-foreground">Couleur</Label>
+        <Select
           value={colorMode}
-          onChange={(event) => onColorMode(event.target.value as ColorMode)}
+          onValueChange={(value) => onColorMode(value as ColorMode)}
         >
-          {ALL_MODES.map((mode) => (
-            <option key={mode} value={mode} disabled={!available.includes(mode)}>
-              {MODE_LABELS[mode]}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label>
-        Points {pointSize}px
-        <input
-          type="range"
+          <SelectTrigger className="w-36">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {ALL_MODES.map((mode) => (
+              <SelectItem
+                key={mode}
+                value={mode}
+                disabled={!available.includes(mode)}
+              >
+                {MODE_LABELS[mode]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="flex items-center gap-2">
+        <Label className="whitespace-nowrap text-muted-foreground">
+          Points {pointSize}px
+        </Label>
+        <Slider
+          className="w-28"
           min={1}
           max={8}
           step={1}
-          value={pointSize}
-          onChange={(event) => onPointSize(Number(event.target.value))}
+          value={[pointSize]}
+          onValueChange={([value]) => onPointSize(value)}
         />
-      </label>
+      </div>
     </section>
   )
 }

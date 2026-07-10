@@ -1,4 +1,8 @@
 import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { isSupportedEpsg, SUPPORTED_EPSG_HINT } from '../lib/epsg-registry.ts'
 
 interface EpsgPromptProps {
@@ -13,44 +17,51 @@ export function EpsgPrompt({ fileEpsg, onSubmit }: EpsgPromptProps) {
   const [rejected, setRejected] = useState<string | null>(null)
 
   return (
-    <form
-      className="epsg-prompt"
-      onSubmit={(event) => {
-        event.preventDefault()
-        const epsg = Number(value)
-        if (Number.isInteger(epsg) && isSupportedEpsg(epsg)) {
-          onSubmit(epsg)
-        } else {
-          setRejected(value)
-        }
-      }}
-    >
-      <h2>CRS requis</h2>
-      <p>
-        {fileEpsg > 0
-          ? `Le CRS du fichier (EPSG:${fileEpsg}) n'est pas supporté.`
-          : 'Ce nuage ne déclare pas de CRS.'}{' '}
-        Indiquez le code EPSG de ses coordonnées pour le placer sur la carte.
-      </p>
-      <label>
-        Code EPSG
-        <input
-          type="text"
-          inputMode="numeric"
-          placeholder="2154"
-          value={value}
-          onChange={(event) => setValue(event.target.value)}
-        />
-      </label>
-      {rejected !== null && (
-        <p className="epsg-prompt-error">
-          {rejected === '4326' || rejected === '3857'
-            ? `EPSG:${rejected} est refusé comme CRS source : ses coordonnées ne sont pas des mètres projetés (degrés ou mètres Mercator distordus). `
-            : `« ${rejected} » n'est pas supporté. `}
-          Codes supportés : {SUPPORTED_EPSG_HINT}.
-        </p>
-      )}
-      <button type="submit">Afficher sur la carte</button>
-    </form>
+    <Card className="w-full max-w-xl text-left">
+      <CardHeader>
+        <CardTitle>CRS requis</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form
+          className="flex flex-col gap-3"
+          onSubmit={(event) => {
+            event.preventDefault()
+            const epsg = Number(value)
+            if (Number.isInteger(epsg) && isSupportedEpsg(epsg)) {
+              onSubmit(epsg)
+            } else {
+              setRejected(value)
+            }
+          }}
+        >
+          <p className="text-muted-foreground">
+            {fileEpsg > 0
+              ? `Le CRS du fichier (EPSG:${fileEpsg}) n'est pas supporté.`
+              : 'Ce nuage ne déclare pas de CRS.'}{' '}
+            Indiquez le code EPSG de ses coordonnées pour le placer sur la carte.
+          </p>
+          <div className="flex items-center gap-3">
+            <Label htmlFor="epsg-code">Code EPSG</Label>
+            <Input
+              id="epsg-code"
+              type="text"
+              inputMode="numeric"
+              placeholder="2154"
+              className="w-24 font-mono"
+              value={value}
+              onChange={(event) => setValue(event.target.value)}
+            />
+          </div>
+          {rejected !== null && (
+            <p className="text-sm text-destructive">
+              « {rejected} » n'est pas supporté — codes supportés : {SUPPORTED_EPSG_HINT}.
+            </p>
+          )}
+          <Button type="submit" className="self-start">
+            Afficher sur la carte
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   )
 }

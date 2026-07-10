@@ -56,5 +56,7 @@ export function MapView({ cloud, epsg, colorMode, pointSize }: MapViewProps) {
     layerRef.current?.setPointSize(pointSize)
   }, [pointSize])
 
-  return <div ref={containerRef} className="map-view" />
+  // `!fixed` beats maplibre-gl.css's `.maplibregl-map { position: relative }`,
+  // whose single-class specificity ties Tailwind's `fixed` utility.
+  return <div ref={containerRef} className="!fixed inset-0" />
 }

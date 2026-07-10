@@ -1,0 +1,61 @@
+.bake-panel {
+  padding: 48px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.bake-panel h1 {
+  margin: 0;
+}
+
+.file-picker input {
+  font: inherit;
+  color: var(--text);
+}
+
+.bake-progress,
+.bake-stats,
+.bake-error {
+  width: 100%;
+  max-width: 560px;
+}
+
+.bake-progress progress {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.bake-stats {
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 24px;
+}
+
+.bake-stats h2 {
+  font-family: var(--mono);
+  font-size: 18px;
+}
+
+.bake-stats dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 8px 24px;
+  margin: 0;
+}
+
+.bake-stats dt {
+  color: var(--text-h);
+}
+
+.bake-stats dd {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 15px;
+}
+
+.bake-error p {
+  color: #dc2626;
+}
